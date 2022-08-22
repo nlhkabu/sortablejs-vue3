@@ -2,42 +2,17 @@
 import Sortable from "./Sortable.vue";
 import { computed, ref } from "vue";
 import type { SortableOptions } from "sortablejs";
+import { useDemo } from "../stores/demoStore";
+import { NONAME } from "dns";
+
+const store = useDemo();
 
 const elements = computed(() => {
-  return [
-    {
-      id: "1",
-      text: "One",
-      children: [
-        {
-          id: "1-1",
-          text: "One-One",
-          children: [
-            {
-              id: "1-1-1",
-              text: "One-One-One",
-            },
-            {
-              id: "1-1-2",
-              text: "One-One-Two",
-            },
-          ],
-        },
-        {
-          id: "1-2",
-          text: "One-Two",
-        },
-      ],
-    },
-    {
-      id: "2",
-      text: "Two",
-    },
-    {
-      id: "3",
-      text: "Three",
-    },
-  ];
+  return store.elements.items;
+});
+
+const fruits = computed(() => {
+  return store.elements.fruits;
 });
 
 const logEvent = (evt: Event, evt2?: Event) => {
@@ -56,12 +31,44 @@ const options = computed<SortableOptions>(() => {
     animation: animating.value ? 150 : 0,
     ghostClass: "ghost",
     dragClass: "drag",
+    group: "testgroup",
   };
 });
 
 const onPress = (evt: Event) => {
   animating.value = !animating.value;
 };
+
+const removeItemFromArray = (array: string, from: number) => {
+  store.elements[array].splice(from, 1)[0];
+};
+
+function onRemove(event, array) {
+  removeItemFromArray(array, event.oldIndex);
+  // event.item.remove(); // Hack to remove phantom DOM element :(
+}
+
+const addItemToArray = (array: string, item: object, to: number) => {
+  store.elements[array].splice(to, 0, item);
+};
+
+function onAdd(event, array) {
+  // temporary hardcoded fake item - TODO: get correct item from store
+  let item = {
+    id: "t",
+    text: "test",
+  };
+  addItemToArray(array, item, event.newIndex);
+}
+
+const moveItemInArray = (array: string, from: number, to: number) => {
+  const item = store.elements[array].splice(from, 1)[0];
+  store.elements[array].splice(to, 0, item);
+};
+
+function onUpdate(event, array) {
+  moveItemInArray(array, event.oldIndex, event.newIndex);
+}
 </script>
 
 <style lang="css" scoped>
@@ -101,10 +108,10 @@ main {
       @unchoose="logEvent"
       @start="logEvent"
       @end="logEvent"
-      @add="logEvent"
-      @update="logEvent"
+      @add="onAdd($event, 'items')"
+      @update="onUpdate($event, 'items')"
       @sort="logEvent"
-      @remove="logEvent"
+      @remove="onRemove($event, 'items')"
       @filter="logEvent"
       @move="logEvent"
       @clone="logEvent"
@@ -112,30 +119,32 @@ main {
       <template #item="{ element, index }">
         <div class="draggable" :key="element.id">
           {{ element.text }}
-          <Sortable
-            v-if="element.children"
-            :list="element.children"
-            :item-key="(item) => item.id"
-            :options="options"
-            @change="logEvent"
-            @choose="logEvent"
-            @unchoose="logEvent"
-            @start="logEvent"
-            @end="logEvent"
-            @add="logEvent"
-            @update="logEvent"
-            @sort="logEvent"
-            @remove="logEvent"
-            @filter="logEvent"
-            @move="logEvent"
-            @clone="logEvent"
-          >
-            <template #item="{ element, index }">
-              <div class="draggable" :key="element.id">
-                {{ element.text }}
-              </div>
-            </template>
-          </Sortable>
+        </div>
+      </template>
+    </Sortable>
+
+    <hr />
+
+    <Sortable
+      :list="fruits"
+      item-key="id"
+      :options="options"
+      @change="logEvent"
+      @choose="logEvent"
+      @unchoose="logEvent"
+      @start="logEvent"
+      @end="logEvent"
+      @add="onAdd($event, 'fruits')"
+      @update="onUpdate($event, 'fruits')"
+      @sort="logEvent"
+      @remove="onRemove($event, 'fruits')"
+      @filter="logEvent"
+      @move="logEvent"
+      @clone="logEvent"
+    >
+      <template #item="{ element, index }">
+        <div class="draggable" :key="element.id">
+          {{ element.text }}
         </div>
       </template>
     </Sortable>

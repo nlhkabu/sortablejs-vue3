@@ -35,8 +35,9 @@
     }
   },
   "dependencies": {
+    "pinia": "^2.0.20",
     "sortablejs": "^1.15.0",
-    "vue": "^3.2.37"
+    "vue": "^3.2.25"
   },
   "peerDependencies": {
     "sortablejs": "^1.15.0",
